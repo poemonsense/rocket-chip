@@ -9,9 +9,7 @@ import freechips.rocketchip.diplomacy.LazyModule
 import freechips.rocketchip.util.AsyncResetReg
 
 class TestHarness()(implicit p: Parameters) extends Module {
-  val io = IO(new Bundle {
-    val success = Output(Bool())
-  })
+  val success = IO(Output(Bool()))
 
   val ldut = LazyModule(new ExampleRocketSystem)
   val dut = Module(ldut.module)
@@ -34,5 +32,5 @@ class TestHarness()(implicit p: Parameters) extends Module {
     a.b.ready := false.B
   })
   //ldut.l2_frontend_bus_axi4.foreach(_.tieoff)
-  Debug.connectDebug(ldut.debug, ldut.resetctrl, ldut.psd, clock, reset.asBool, io.success)
+  Debug.connectDebug(ldut.debug, ldut.resetctrl, ldut.psd, clock, reset.asBool, success)
 }

@@ -50,10 +50,10 @@ class AXI4RAM(
   private val outer = this
 
   lazy val module = new Impl
-  class Impl extends LazyModuleImp(this) with HasJustOneSeqMem {
+  class Impl extends LazyModuleImp(this) {
     val (in, edgeIn) = node.in(0)
     val laneDataBits = 8
-    val mem = makeSinglePortedByteWriteSeqMem(
+    val mem = difftest.common.DifftestRAM(
       size = BigInt(1) << mask.filter(b=>b).size,
       lanes = beatBytes,
       bits = laneDataBits)

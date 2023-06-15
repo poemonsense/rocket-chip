@@ -5,6 +5,8 @@ import coursier.maven.MavenRepository
 import $file.hardfloat.build
 import $file.cde.common
 import $file.common
+import $file.difftest.build
+import $file.difftest.instrumentation.instrumentation.build
 
 object cdeRocket extends cde.common.CDEModule with PublishModule {
   override def millSourcePath = os.pwd / "cde" / "cde"
@@ -35,6 +37,19 @@ object hardfloatRocket extends hardfloat.build.hardfloat {
   ) else Agg.empty[Dep]
 }
 
+object difftestDep extends difftest.build.CommonDiffTest {
+
+  object fuzz extends difftest.instrumentation.instrumentation.build.CommonRFuzz {
+    def sourceRoot = T.sources { T.workspace / "difftest" / "instrumentation" / "instrumentation" / "src" }
+
+    def allSources = T { sourceRoot().flatMap(p => os.walk(p.path)).map(PathRef(_)) }
+  }
+
+  override def fuzzModule: PublishModule = fuzz
+
+  override def millSourcePath = os.pwd / "difftest"
+}
+
 object rocketchip extends common.CommonRocketChip {
   m =>
   override def scalaVersion: T[String] = T {
@@ -47,6 +62,8 @@ object rocketchip extends common.CommonRocketChip {
   def hardfloatModule = hardfloatRocket
 
   def cdeModule = cdeRocket
+
+  def difftestModule = difftestDep
 }
 
 def envByNameOrRiscv(name: String): String = {

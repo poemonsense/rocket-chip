@@ -67,6 +67,8 @@ trait CommonRocketChip extends SbtModule with PublishModule {
 
   def cdeModule: PublishModule
 
+  def difftestModule: PublishModule
+
   def chisel3IvyDeps = if (chisel3Module.isEmpty) Agg(
     getVersion("chisel3")
   ) else Agg.empty[Dep]
@@ -75,7 +77,7 @@ trait CommonRocketChip extends SbtModule with PublishModule {
     Some("freechips.rocketchip.system.Generator")
   }
 
-  override def moduleDeps = Seq(macros) ++ chisel3Module :+ hardfloatModule :+ cdeModule
+  override def moduleDeps = Seq(macros) ++ chisel3Module :+ hardfloatModule :+ cdeModule :+ difftestModule
 
   override def scalacOptions = T {
     Seq("-deprecation", "-unchecked")
