@@ -8,7 +8,8 @@ import firrtl.options.Shell
 import firrtl.stage.FirrtlCli
 import freechips.rocketchip.devices.debug.DebugModuleKey
 import freechips.rocketchip.devices.tilelink.{BootROMLocated, BootROMParams, CLINTKey}
-import freechips.rocketchip.subsystem.{InSubsystem, WithCoherentBusTopology, WithNBigCores}
+import freechips.rocketchip.diplomacy._
+import freechips.rocketchip.subsystem._
 import org.chipsalliance.cde.config.{Config, Parameters}
 import xfuzz.CoverPoint
 
@@ -31,7 +32,7 @@ class FuzzStage extends ChiselStage {
 class FuzzConfig extends Config(
   new WithNBigCores(1) ++
   new WithCoherentBusTopology ++
-  new BaseConfig().alter((_, _, _) => {
+  new BaseConfig().alter((site, _, _) => {
     case DebugModuleKey => None
     case CLINTKey => None
     case BootROMLocated(InSubsystem) => Some(BootROMParams(
@@ -39,6 +40,11 @@ class FuzzConfig extends Config(
       address = 0x10000000,
       hang = 0x10000000
     ))
+    case ExtMem => Some(MemoryPortParams(MasterPortParams(
+      base = x"8000_0000",
+      size = x"8000_0000",
+      beatBytes = site(MemoryBusKey).beatBytes,
+      idBits = 4), 1))
   })
 )
 
