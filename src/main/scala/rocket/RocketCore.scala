@@ -1080,16 +1080,19 @@ class Rocket(tile: RocketTile)(implicit p: Parameters) extends CoreModule()(p)
   }
   if (true) {
     val difftest = DifftestModule(new DiffInstrCommit, delay = 1)
+    // It seems rocket will commit the instruction (at least for tracing) even if
+    // the data has not been written back, in case of multicycle operations.
+    val missingData = !coreMonitorBundle.wrenx && (wb_ctrl.wxd || wb_ctrl.wfd)
     difftest.clock := clock
     difftest.coreid := 0.U
     difftest.index := 0.U
-    difftest.valid := csr.io.trace(0).isCommit
+    difftest.valid := csr.io.trace(0).isCommit && !missingData || ll_wen
     difftest.pc := coreMonitorBundle.pc
     difftest.instr := coreMonitorBundle.inst
     difftest.special := 0.U
     difftest.skip := false.B
     difftest.isRVC := false.B
-    difftest.rfwen := coreMonitorBundle.wrenx
+    difftest.rfwen := coreMonitorBundle.wrenx || ll_wen
     difftest.fpwen := false.B
     difftest.wpdest := coreMonitorBundle.wrdst
     difftest.wdest := coreMonitorBundle.wrdst
