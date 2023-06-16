@@ -14,6 +14,7 @@ import freechips.rocketchip.util.property
 import scala.collection.mutable.LinkedHashMap
 import Instructions._
 import CustomInstructions._
+import difftest.{DiffArchEvent, DiffCSRState, DiffTrapEvent, DifftestModule}
 
 class MStatus extends Bundle {
   // not truly part of mstatus, but convenient
@@ -230,6 +231,8 @@ class TracedInstruction(implicit p: Parameters) extends CoreBundle {
   val cause = UInt(xLen.W)
   val tval = UInt((coreMaxAddrBits max iLen).W)
   val wdata = Option.when(traceHasWdata)(UInt((vLen max xLen).W))
+
+  def isCommit: Bool = valid && !(exception || interrupt)
 }
 
 class TraceAux extends Bundle {
@@ -732,6 +735,7 @@ class CSRFile(
     sgeip_mask.sgeip := true.B
     read_mideleg & ~(hs_delegable_interrupts | sgeip_mask.asUInt)
   }
+  val sstatus = WireInit(0.U(64.W))
   if (usingSupervisor) {
     val read_sie = reg_mie & sie_mask
     val read_sip = read_mip & sie_mask
@@ -747,6 +751,7 @@ class CSRFile(
     read_sstatus.spp := io.status.spp
     read_sstatus.spie := io.status.spie
     read_sstatus.sie := io.status.sie
+    sstatus := read_sstatus.asTypeOf(sstatus)
 
     read_mapping += CSRs.sstatus -> (read_sstatus.asUInt)(xLen-1,0)
     read_mapping += CSRs.sip -> read_sip.asUInt
@@ -1578,6 +1583,53 @@ class CSRFile(
     t.interrupt := cause(xLen-1)
     t.tval := io.tval
     t.wdata.foreach(_ := DontCare)
+  }
+
+  if (true) {
+    val difftest = DifftestModule(new DiffArchEvent)
+    difftest.clock         := clock
+    difftest.coreid        := 0.U
+    difftest.interrupt     := Mux(exception && cause(xLen-1), cause, 0.U)
+    difftest.exception     := Mux(exception && !cause(xLen-1), cause, 0.U)
+    difftest.exceptionPC   := io.pc
+    difftest.exceptionInst := io.inst.head
+  }
+
+  if (true) {
+    val difftest = DifftestModule(new DiffTrapEvent)
+    difftest.clock    := clock
+    difftest.coreid   := 0.U
+    difftest.hasTrap  := false.B
+    difftest.code     := 0.U
+    difftest.cycleCnt := reg_cycle
+    difftest.instrCnt := reg_instret
+    difftest.hasWFI   := 0.U
+    difftest.pc       := io.pc
+  }
+
+  if (true) {
+    val difftest = DifftestModule(new DiffCSRState)
+    difftest.clock := clock
+    difftest.coreid := 0.U
+    difftest.priviledgeMode := Cat(reg_debug, reg_mstatus.prv)
+    difftest.mstatus := read_mstatus
+    difftest.sstatus := sstatus
+    difftest.mepc := reg_mepc
+    difftest.sepc := reg_sepc
+    difftest.mtval := reg_mtval
+    difftest.stval := reg_stval
+    difftest.mtvec := read_mtvec
+    difftest.stvec := read_stvec
+    difftest.mcause := reg_mcause
+    difftest.scause := reg_scause
+    difftest.satp := reg_satp.asUInt
+    difftest.mip := reg_mip.asUInt
+    difftest.mie := reg_mie
+    difftest.mscratch := reg_mscratch
+    difftest.sscratch := reg_sscratch
+    difftest.mideleg := reg_mideleg
+    difftest.medeleg := reg_medeleg
+
   }
 
   def chooseInterrupt(masksIn: Seq[UInt]): (Bool, UInt) = {

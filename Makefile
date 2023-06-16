@@ -28,7 +28,7 @@ $(TOP_V): $(SCALA_FILE) $(BOOTROM_IMG)
 sim-verilog: $(TOP_V)
 
 emu: sim-verilog
-	@$(MAKE) -C difftest emu SIM_TOP=SimTop NUM_CORES=$(NUM_CORES) NO_DIFF=1
+	@$(MAKE) -C difftest emu SIM_TOP=SimTop NUM_CORES=$(NUM_CORES)
 
 clean:
 	rm -rf $(BUILD_DIR)

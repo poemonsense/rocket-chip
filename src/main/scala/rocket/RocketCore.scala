@@ -6,11 +6,13 @@ package freechips.rocketchip.rocket
 import chisel3._
 import chisel3.util._
 import chisel3.withClock
+import difftest.{DiffArchIntRegState, DiffInstrCommit, DifftestModule}
 import org.chipsalliance.cde.config.Parameters
 import freechips.rocketchip.tile._
 import freechips.rocketchip.util._
 import freechips.rocketchip.util.property
 import freechips.rocketchip.scie._
+
 import scala.collection.mutable.ArrayBuffer
 
 case class RocketCoreParams(
@@ -770,6 +772,12 @@ class Rocket(tile: RocketTile)(implicit p: Parameters) extends CoreModule()(p)
                  Mux(wb_ctrl.mul, mul.map(_.io.resp.bits.data).getOrElse(wb_reg_wdata),
                  wb_reg_wdata))))
   when (rf_wen) { rf.write(rf_waddr, rf_wdata) }
+  if (true) {
+    val difftest = DifftestModule(new DiffArchIntRegState)
+    difftest.clock  := clock
+    difftest.coreid := 0.U
+    difftest.value  := rf.values
+  }
 
   // hook up control/status regfile
   csr.io.ungated_clock := clock
@@ -1070,6 +1078,22 @@ class Rocket(tile: RocketTile)(implicit p: Parameters) extends CoreModule()(p)
          coreMonitorBundle.inst, coreMonitorBundle.inst)
     }
   }
+  if (true) {
+    val difftest = DifftestModule(new DiffInstrCommit, delay = 1)
+    difftest.clock := clock
+    difftest.coreid := 0.U
+    difftest.index := 0.U
+    difftest.valid := csr.io.trace(0).isCommit
+    difftest.pc := coreMonitorBundle.pc
+    difftest.instr := coreMonitorBundle.inst
+    difftest.special := 0.U
+    difftest.skip := false.B
+    difftest.isRVC := false.B
+    difftest.rfwen := coreMonitorBundle.wrenx
+    difftest.fpwen := false.B
+    difftest.wpdest := coreMonitorBundle.wrdst
+    difftest.wdest := coreMonitorBundle.wrdst
+  }
 
   // CoreMonitorBundle for late latency writes
   val xrfWriteBundle = Wire(new CoreMonitorBundle(xLen, fLen))
@@ -1160,6 +1184,7 @@ class RegFile(n: Int, w: Int, zero: Boolean = false) {
         when (addr === raddr) { rdata := data }
     }
   }
+  def values: Vec[UInt] = VecInit(0.U +: (0 until n).map(rf(_)).reverse)
 }
 
 object ImmGen {
