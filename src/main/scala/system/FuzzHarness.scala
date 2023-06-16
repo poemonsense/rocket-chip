@@ -30,7 +30,15 @@ class FuzzStage extends ChiselStage {
 }
 
 class FuzzConfig extends Config(
-  new WithNBigCores(1) ++
+  new WithNBigCores(1).alter((site, _, up) => {
+    case TilesLocated(InSubsystem) => up(TilesLocated(InSubsystem), site).map {
+      case tp: RocketTileAttachParams => tp.copy(tileParams = tp.tileParams.copy(
+        core = tp.tileParams.core.copy(
+          nPMPs = 0
+        )
+      ))
+    }
+  }) ++
   new WithCoherentBusTopology ++
   new BaseConfig().alter((site, _, _) => {
     case DebugModuleKey => None
