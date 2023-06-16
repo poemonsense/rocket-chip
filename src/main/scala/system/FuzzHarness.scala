@@ -6,12 +6,11 @@ import chisel3.stage.{ChiselCli, ChiselGeneratorAnnotation, ChiselStage}
 import difftest.{DifftestModule, LogCtrlIO, PerfInfoIO, UARTIO}
 import firrtl.options.Shell
 import firrtl.stage.FirrtlCli
+import freechips.rocketchip.devices.debug.DebugModuleKey
+import freechips.rocketchip.devices.tilelink.{BootROMLocated, BootROMParams, CLINTKey}
+import freechips.rocketchip.subsystem.{InSubsystem, WithCoherentBusTopology, WithNBigCores}
 import org.chipsalliance.cde.config.{Config, Parameters}
 import xfuzz.CoverPoint
-import freechips.rocketchip.system.BaseConfig
-import freechips.rocketchip.subsystem.{WithCoherentBusTopology, WithNBigCores}
-import freechips.rocketchip.devices.debug.DebugModuleKey
-import freechips.rocketchip.devices.tilelink.{CLINTKey, PLICKey}
 
 class SimTop()(implicit p: Parameters) extends TestHarness {
   val io = IO(new Bundle {
@@ -32,9 +31,14 @@ class FuzzStage extends ChiselStage {
 class FuzzConfig extends Config(
   new WithNBigCores(1) ++
   new WithCoherentBusTopology ++
-  new BaseConfig().alter((site,here,up) => {
+  new BaseConfig().alter((_, _, _) => {
     case DebugModuleKey => None
     case CLINTKey => None
+    case BootROMLocated(InSubsystem) => Some(BootROMParams(
+      contentFileName = "./bootrom/bootrom.img",
+      address = 0x10000000,
+      hang = 0x10000000
+    ))
   })
 )
 

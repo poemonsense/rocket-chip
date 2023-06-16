@@ -17,4 +17,5 @@ rocketchip.jar
 .#*
 .idea
 build
+bootrom/bootrom.img
 
