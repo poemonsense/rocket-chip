@@ -1586,7 +1586,7 @@ class CSRFile(
   }
 
   if (true) {
-    val difftest = DifftestModule(new DiffArchEvent)
+    val difftest = DifftestModule(new DiffArchEvent, delay = 1)
     difftest.clock         := clock
     difftest.coreid        := 0.U
     difftest.interrupt     := Mux(exception && cause(xLen-1), cause, 0.U)
