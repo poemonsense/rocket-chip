@@ -1614,10 +1614,10 @@ class CSRFile(
     difftest.priviledgeMode := Cat(reg_debug, reg_mstatus.prv)
     difftest.mstatus := read_mstatus
     difftest.sstatus := sstatus
-    difftest.mepc := reg_mepc
-    difftest.sepc := reg_sepc
-    difftest.mtval := reg_mtval
-    difftest.stval := reg_stval
+    difftest.mepc := readEPC(reg_mepc).sextTo(xLen)
+    difftest.sepc := readEPC(reg_sepc).sextTo(xLen)
+    difftest.mtval := reg_mtval.sextTo(xLen)
+    difftest.stval := reg_stval.sextTo(xLen)
     difftest.mtvec := read_mtvec
     difftest.stvec := read_stvec
     difftest.mcause := reg_mcause
