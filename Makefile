@@ -2,7 +2,8 @@ FUZZ_TOP  = freechips.rocketchip.system.FuzzMain
 BUILD_DIR = $(abspath ./build)
 TOP_V     = $(BUILD_DIR)/SimTop.v
 
-MILL_ARGS = --target-dir $(BUILD_DIR)
+MILL_ARGS = --target-dir $(BUILD_DIR) \
+            --full-stacktrace
 
 # Number of CPU cores
 NUM_CORES ?= 1
