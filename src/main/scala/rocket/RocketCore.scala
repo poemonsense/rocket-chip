@@ -6,7 +6,7 @@ package freechips.rocketchip.rocket
 import chisel3._
 import chisel3.util._
 import chisel3.withClock
-import difftest.{DiffArchIntRegState, DiffInstrCommit, DifftestModule}
+import difftest.{DiffArchIntDelayedUpdate, DiffArchIntRegState, DiffInstrCommit, DifftestModule}
 import org.chipsalliance.cde.config.Parameters
 import freechips.rocketchip.tile._
 import freechips.rocketchip.util._
@@ -1082,20 +1082,29 @@ class Rocket(tile: RocketTile)(implicit p: Parameters) extends CoreModule()(p)
     val difftest = DifftestModule(new DiffInstrCommit, delay = 1)
     // It seems rocket will commit the instruction (at least for tracing) even if
     // the data has not been written back, in case of multicycle operations.
+    // Therefore, we set the special bit for delayed writeback of the register.
     val missingData = !coreMonitorBundle.wrenx && (wb_ctrl.wxd || wb_ctrl.wfd)
     difftest.clock := clock
     difftest.coreid := 0.U
     difftest.index := 0.U
-    difftest.valid := csr.io.trace(0).isCommit && !missingData || ll_wen
+    difftest.valid := csr.io.trace(0).isCommit
     difftest.pc := coreMonitorBundle.pc
     difftest.instr := coreMonitorBundle.inst
-    difftest.special := 0.U
     difftest.skip := false.B
     difftest.isRVC := false.B
-    difftest.rfwen := coreMonitorBundle.wrenx || ll_wen
+    difftest.rfwen := coreMonitorBundle.wrenx
     difftest.fpwen := false.B
     difftest.wpdest := coreMonitorBundle.wrdst
     difftest.wdest := coreMonitorBundle.wrdst
+    difftest.setSpecial(isDelayedWb = missingData)
+  }
+  if (true) {
+    val difftest = DifftestModule(new DiffArchIntDelayedUpdate, delay = 1)
+    difftest.clock := clock
+    difftest.coreid := 0.U
+    difftest.valid := ll_wen && ll_waddr =/= 0.U
+    difftest.address := ll_waddr
+    difftest.data := ll_wdata
   }
 
   // CoreMonitorBundle for late latency writes
