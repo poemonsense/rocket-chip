@@ -8,6 +8,7 @@ import chisel3.util._
 import freechips.rocketchip.util.CompileOptions.NotStrictInferReset
 import chisel3.{DontCare, WireInit, withClock, withReset}
 import chisel3.internal.sourceinfo.SourceInfo
+import difftest.{DiffArchFpRegState, DifftestModule}
 import org.chipsalliance.cde.config.Parameters
 import freechips.rocketchip.rocket._
 import freechips.rocketchip.rocket.Instructions._
@@ -1018,6 +1019,12 @@ class FPU(cfg: FPUParams)(implicit p: Parameters) extends FPUModule()(p) {
     wen.orR || divSqrt_inFlight || // post-WB stage
     io.dmem_resp_val // load writeback
 
+  if (true) {
+    val difftest = DifftestModule(new DiffArchFpRegState)
+    difftest.clock  := clock
+    difftest.coreid := 0.U
+    difftest.value  := (0 until 32).map(regfile(_))
+  }
   } // leaving gated-clock domain
   val fpuImpl = withClock (gated_clock) { new FPUImpl }
 
