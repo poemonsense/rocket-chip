@@ -56,7 +56,9 @@ class AXI4RAM(
     val mem = difftest.common.DifftestRAM(
       size = BigInt(1) << mask.filter(b=>b).size,
       lanes = beatBytes,
-      bits = laneDataBits)
+      bits = laneDataBits,
+      singlePort = false,
+    )
     val eccCode = None
     val address = outer.address
 
