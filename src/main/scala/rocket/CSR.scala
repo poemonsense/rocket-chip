@@ -1518,6 +1518,11 @@ class CSRFile(
 
   when(reset.asBool) {
     reg_satp.mode  := 0.U
+    reg_satp.asid  := 0.U
+    reg_satp.ppn   := 0.U
+    reg_mie        := 0.U
+    reg_mideleg    := 0.U
+    reg_medeleg    := 0.U
     reg_vsatp.mode := 0.U
     reg_hgatp.mode := 0.U
   }
