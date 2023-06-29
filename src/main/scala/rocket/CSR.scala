@@ -1632,8 +1632,8 @@ class CSRFile(
     difftest.mie := reg_mie
     difftest.mscratch := reg_mscratch
     difftest.sscratch := reg_sscratch
-    difftest.mideleg := reg_mideleg
-    difftest.medeleg := reg_medeleg
+    difftest.mideleg := read_mideleg
+    difftest.medeleg := read_medeleg
 
   }
 
