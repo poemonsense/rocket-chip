@@ -1096,7 +1096,8 @@ class Rocket(tile: RocketTile)(implicit p: Parameters) extends CoreModule()(p)
     difftest.fpwen := false.B
     difftest.wpdest := coreMonitorBundle.wrdst
     difftest.wdest := coreMonitorBundle.wrdst
-    difftest.setSpecial(isDelayedWb = missingData)
+    val isWFI = difftest.instr === 0x10500073.U
+    difftest.setSpecial(isDelayedWb = missingData, isExit = isWFI)
   }
   if (true) {
     val difftest = DifftestModule(new DiffArchIntDelayedUpdate, delay = 1)
