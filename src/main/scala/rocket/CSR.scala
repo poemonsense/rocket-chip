@@ -1345,7 +1345,7 @@ class CSRFile(
       when (decoded_addr(CSRs.sscratch)) { reg_sscratch := wdata }
       when (decoded_addr(CSRs.sepc))     { reg_sepc := formEPC(wdata) }
       when (decoded_addr(CSRs.stvec))    { reg_stvec := wdata }
-      when (decoded_addr(CSRs.scause))   { reg_scause := wdata & scause_mask }
+      when (decoded_addr(CSRs.scause))   { reg_scause := wdata }
       when (decoded_addr(CSRs.stval))    { reg_stval := wdata }
       when (decoded_addr(CSRs.mideleg))  { reg_mideleg := wdata }
       when (decoded_addr(CSRs.medeleg))  { reg_medeleg := wdata }
