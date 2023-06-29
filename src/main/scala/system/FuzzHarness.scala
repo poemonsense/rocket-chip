@@ -6,21 +6,58 @@ import chisel3.stage.{ChiselCli, ChiselGeneratorAnnotation, ChiselStage}
 import difftest.{DifftestModule, LogCtrlIO, PerfInfoIO, UARTIO}
 import firrtl.options.Shell
 import firrtl.stage.FirrtlCli
-import freechips.rocketchip.devices.debug.DebugModuleKey
-import freechips.rocketchip.devices.tilelink.{BootROMLocated, BootROMParams, CLINTKey}
+import freechips.rocketchip.devices.debug.{Debug, DebugModuleKey}
+import freechips.rocketchip.devices.tilelink._
 import freechips.rocketchip.diplomacy._
 import freechips.rocketchip.subsystem._
+import freechips.rocketchip.util.AsyncResetReg
 import org.chipsalliance.cde.config.{Config, Parameters}
 import xfuzz.CoverPoint
 
-class SimTop()(implicit p: Parameters) extends TestHarness {
+class ExampleFuzzSystem(implicit p: Parameters) extends RocketSubsystem
+  with CanHaveMasterAXI4MemPort
+  with CanHaveSlaveAXI4Port
+{
+  // optionally add ROM devices
+  // Note that setting BootROMLocated will override the reset_vector for all tiles
+  val bootROM  = p(BootROMLocated(location)).map { BootROM.attach(_, this, CBUS) }
+  val maskROMs = p(MaskROMLocated(location)).map { MaskROM.attach(_, this, CBUS) }
+
+  override lazy val module = new ExampleFuzzSystemImp(this)
+}
+
+class ExampleFuzzSystemImp[+L <: ExampleFuzzSystem](_outer: L) extends RocketSubsystemModuleImp(_outer)
+
+class SimTop(implicit p: Parameters) extends Module {
   val io = IO(new Bundle {
     val logCtrl = new LogCtrlIO
     val perfInfo = new PerfInfoIO
     val uart = new UARTIO
   })
+
+  val ldut = LazyModule(new ExampleFuzzSystem)
+  val dut = Module(ldut.module)
+
+  // Allow the debug ndreset to reset the dut, but not until the initial reset has completed
+  dut.reset := (reset.asBool | ldut.debug.map { debug => AsyncResetReg(debug.ndreset) }.getOrElse(false.B)).asBool
+
+  SimAXIMem.connectMem(ldut)
+  ldut.l2_frontend_bus_axi4.foreach( a => {
+    a.ar.valid := false.B
+    a.ar.bits := DontCare
+    a.aw.valid := false.B
+    a.aw.bits := DontCare
+    a.w.valid := false.B
+    a.w.bits := DontCare
+    a.r.ready := false.B
+    a.b.ready := false.B
+  })
+  val success = WireInit(false.B)
+  Debug.connectDebug(ldut.debug, ldut.resetctrl, ldut.psd, clock, reset.asBool, success)
+
   io := DontCare
-  success := DontCare
+  ldut.module.meip.foreach(_.foreach(_ := false.B))
+  ldut.module.seip.foreach(_.foreach(_ := false.B))
 }
 
 class FuzzStage extends ChiselStage {
@@ -43,6 +80,7 @@ class FuzzConfig extends Config(
   new BaseConfig().alter((site, _, _) => {
     case DebugModuleKey => None
     case CLINTKey => None
+    case PLICKey => None
     case BootROMLocated(InSubsystem) => Some(BootROMParams(
       contentFileName = "./bootrom/bootrom.img",
       address = 0x10000000,
