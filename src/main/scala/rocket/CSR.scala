@@ -1257,7 +1257,7 @@ class CSRFile(
     when (decoded_addr(CSRs.mscratch)) { reg_mscratch := wdata }
     if (mtvecWritable)
       when (decoded_addr(CSRs.mtvec))  { reg_mtvec := wdata }
-    when (decoded_addr(CSRs.mcause))   { reg_mcause := wdata & ((BigInt(1) << (xLen-1)) + (BigInt(1) << whichInterrupt.getWidth) - 1).U }
+    when (decoded_addr(CSRs.mcause))   { reg_mcause := wdata }
     when (decoded_addr(CSRs.mtval))    { reg_mtval := wdata }
 
     if (usingNMI) {
