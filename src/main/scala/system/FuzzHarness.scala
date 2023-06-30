@@ -16,7 +16,6 @@ import xfuzz.CoverPoint
 
 class ExampleFuzzSystem(implicit p: Parameters) extends RocketSubsystem
   with CanHaveMasterAXI4MemPort
-  with CanHaveSlaveAXI4Port
 {
   // optionally add ROM devices
   // Note that setting BootROMLocated will override the reset_vector for all tiles
@@ -42,16 +41,6 @@ class SimTop(implicit p: Parameters) extends Module {
   dut.reset := (reset.asBool | ldut.debug.map { debug => AsyncResetReg(debug.ndreset) }.getOrElse(false.B)).asBool
 
   SimAXIMem.connectMem(ldut)
-  ldut.l2_frontend_bus_axi4.foreach( a => {
-    a.ar.valid := false.B
-    a.ar.bits := DontCare
-    a.aw.valid := false.B
-    a.aw.bits := DontCare
-    a.w.valid := false.B
-    a.w.bits := DontCare
-    a.r.ready := false.B
-    a.b.ready := false.B
-  })
   val success = WireInit(false.B)
   Debug.connectDebug(ldut.debug, ldut.resetctrl, ldut.psd, clock, reset.asBool, success)
 
