@@ -71,6 +71,7 @@ class FuzzConfig extends Config(
     case TilesLocated(InSubsystem) => up(TilesLocated(InSubsystem), site).map {
       case tp: RocketTileAttachParams => tp.copy(tileParams = tp.tileParams.copy(
         core = tp.tileParams.core.copy(
+          haveCease = false,
           nPMPs = 0
         )
       ))
