@@ -1090,7 +1090,8 @@ class Rocket(tile: RocketTile)(implicit p: Parameters) extends CoreModule()(p)
     difftest.valid := csr.io.trace(0).isCommit
     difftest.pc := coreMonitorBundle.pc
     difftest.instr := coreMonitorBundle.inst
-    difftest.skip := false.B
+    val isPerfCntRead = wb_ctrl.csr =/= CSR.N && csr.io.csrr_counter
+    difftest.skip := isPerfCntRead
     difftest.isRVC := false.B
     difftest.rfwen := coreMonitorBundle.wrenx
     difftest.fpwen := false.B

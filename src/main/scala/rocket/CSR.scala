@@ -299,6 +299,7 @@ class CSRFileIO(implicit p: Parameters) extends CoreBundle
   val bp = Output(Vec(nBreakpoints, new BP))
   val pmp = Output(Vec(nPMPs, new PMP))
   val counters = Vec(nPerfCounters, new PerfCounterIO)
+  val csrr_counter = Output(Bool())
   val csrw_counter = Output(UInt(CSR.nCtr.W))
   val inhibit_cycle = Output(Bool())
   val inst = Input(Vec(retireWidth, UInt(iLen.W)))
@@ -1199,6 +1200,9 @@ class CSRFile(
       set_vs_dirty := true.B
     }
   }
+
+  // For now, only mcycle read requires skip
+  io.csrr_counter := decoded_addr(CSRs.mcycle)
 
   val csr_wen = io.rw.cmd.isOneOf(CSR.S, CSR.C, CSR.W)
   io.csrw_counter := Mux(coreParams.haveBasicCounters.B && csr_wen && (io.rw.addr.inRange(CSRs.mcycle.U, (CSRs.mcycle + CSR.nCtr).U) || io.rw.addr.inRange(CSRs.mcycleh.U, (CSRs.mcycleh + CSR.nCtr).U)), UIntToOH(io.rw.addr(log2Ceil(CSR.nCtr+nPerfCounters)-1, 0)), 0.U)
