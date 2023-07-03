@@ -67,7 +67,7 @@ class FuzzConfig extends Config(
     }
   }) ++
   new WithCoherentBusTopology ++
-  new BaseConfig().alter((site, _, _) => {
+  new BaseConfig().alter((site, _, up) => {
     case DebugModuleKey => None
     case CLINTKey => None
     case PLICKey => None
@@ -81,6 +81,10 @@ class FuzzConfig extends Config(
       size = x"8000_0000",
       beatBytes = site(MemoryBusKey).beatBytes,
       idBits = 4), 1))
+    case ControlBusKey => up(ControlBusKey, site).copy(
+      errorDevice = None,
+      zeroDevice = None,
+    )
   })
 )
 
