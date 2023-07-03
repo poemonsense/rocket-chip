@@ -14,6 +14,7 @@ import freechips.rocketchip.util.property
 import chisel3.{DontCare, WireInit, dontTouch, withClock}
 import chisel3.internal.sourceinfo.SourceInfo
 import TLMessages._
+import difftest.{DiffStoreEvent, DifftestModule}
 
 // TODO: delete this trait once deduplication is smart enough to avoid globally inlining matching circuits
 trait InlineInstance { self: chisel3.experimental.BaseModule =>
@@ -951,6 +952,21 @@ class DCacheModule(outer: DCache) extends HellaCacheModule(outer) {
   io.cpu.resp.bits.data_word_bypass := loadgen.wordData
   io.cpu.resp.bits.data_raw := s2_data_word
   io.cpu.resp.bits.store_data := pstore1_data
+  if (true) {
+    val resp = io.cpu.resp
+    val difftest = DifftestModule(new DiffStoreEvent, delay = 3)
+    difftest.clock  := clock
+    difftest.coreid := 0.U
+    difftest.index  := 0.U
+    difftest.valid  := resp.valid && !resp.bits.has_data
+    // 8-byte aligned request
+    difftest.addr   := resp.bits.addr
+    val mask = Wire(UInt(8.W))
+    mask := (1.U(9.W) << (1.U(4.W) << resp.bits.size)) - 1.U
+    val masked_data = FillInterleaved(8, mask) & resp.bits.store_data
+    difftest.data   := masked_data
+    difftest.mask   := mask
+  }
 
   // AMOs
   if (usingRMW) {
