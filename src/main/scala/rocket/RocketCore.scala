@@ -1105,7 +1105,7 @@ class Rocket(tile: RocketTile)(implicit p: Parameters) extends CoreModule()(p)
     difftest.coreid := 0.U
     difftest.valid := ll_wen && ll_waddr =/= 0.U
     difftest.address := ll_waddr
-    difftest.data := ll_wdata
+    difftest.data := rf_wdata
   }
 
   // CoreMonitorBundle for late latency writes
