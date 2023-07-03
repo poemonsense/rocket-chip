@@ -1080,10 +1080,6 @@ class Rocket(tile: RocketTile)(implicit p: Parameters) extends CoreModule()(p)
   }
   if (true) {
     val difftest = DifftestModule(new DiffInstrCommit, delay = 1)
-    // It seems rocket will commit the instruction (at least for tracing) even if
-    // the data has not been written back, in case of multicycle operations.
-    // Therefore, we set the special bit for delayed writeback of the register.
-    val missingData = !coreMonitorBundle.wrenx && (wb_ctrl.wxd || wb_ctrl.wfd)
     difftest.clock := clock
     difftest.coreid := 0.U
     difftest.index := 0.U
@@ -1093,17 +1089,28 @@ class Rocket(tile: RocketTile)(implicit p: Parameters) extends CoreModule()(p)
     val isPerfCntRead = wb_ctrl.csr =/= CSR.N && csr.io.csrr_counter
     difftest.skip := isPerfCntRead
     difftest.isRVC := false.B
-    difftest.rfwen := coreMonitorBundle.wrenx
-    difftest.fpwen := false.B
+    difftest.rfwen := wb_ctrl.wxd
+    difftest.fpwen := wb_ctrl.wfd
     difftest.wpdest := coreMonitorBundle.wrdst
     difftest.wdest := coreMonitorBundle.wrdst
+    // The rocket core has a scoreboard to track the status of architectural registers.
+    // This sboard allows the instructions to commit earlier than the actual data writeback.
+    // To avoid mismatch during co-simulation, we allow some registers to be waived for comparison.
+    // We set the special bit for delayed writeback of the destination register and skip its comparison.
+    val rf_delayed = wb_set_sboard && wb_wen && wb_waddr =/= 0.U
+    // Floating-point operations have a weird timing. We always delay their writeback check.
+    val fp_delayed = wb_ctrl.wfd
     val isWFI = difftest.instr === 0x10500073.U
-    difftest.setSpecial(isDelayedWb = missingData, isExit = isWFI)
+    difftest.setSpecial(
+      isDelayedWb = rf_delayed || fp_delayed,
+      isExit = isWFI
+    )
   }
   if (true) {
     val difftest = DifftestModule(new DiffArchIntDelayedUpdate, delay = 1)
     difftest.clock := clock
     difftest.coreid := 0.U
+    difftest.index := 0.U
     difftest.valid := ll_wen && ll_waddr =/= 0.U
     difftest.address := ll_waddr
     difftest.data := rf_wdata

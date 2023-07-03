@@ -8,7 +8,7 @@ import chisel3.util._
 import freechips.rocketchip.util.CompileOptions.NotStrictInferReset
 import chisel3.{DontCare, WireInit, withClock, withReset}
 import chisel3.internal.sourceinfo.SourceInfo
-import difftest.{DiffArchFpRegState, DifftestModule}
+import difftest.{DiffArchFpDelayedUpdate, DiffArchFpRegState, DifftestModule}
 import org.chipsalliance.cde.config.Parameters
 import freechips.rocketchip.rocket._
 import freechips.rocketchip.rocket.Instructions._
@@ -1023,7 +1023,28 @@ class FPU(cfg: FPUParams)(implicit p: Parameters) extends FPUModule()(p) {
     val difftest = DifftestModule(new DiffArchFpRegState)
     difftest.clock  := clock
     difftest.coreid := 0.U
-    difftest.value  := (0 until 32).map(regfile(_))
+    difftest.value  := (0 until 32).map(i => ieee(regfile(i)))
+    // Initialize the regfile with meaningful values to avoid mismatch between the recode and IEEE 754 formats.
+    when (RegNext(reset.asBool) && !reset.asBool) {
+      for (i <- 0 until 32) {
+        regfile(i) := recode("h3FF0000000000000".U, typeTag(FType.D).U)
+      }
+    }
+  }
+  if (true) {
+    val regfile_wports = Seq(
+      ((!wbInfo(0).cp && wen(0)) || divSqrt_wen, waddr, wdata),
+      (load_wb, load_wb_tag, recode(load_wb_data, load_wb_typeTag)),
+    )
+    for (((en, addr, data), i) <- regfile_wports.zipWithIndex) {
+      val difftest = DifftestModule(new DiffArchFpDelayedUpdate, delay = 1)
+      difftest.clock   := clock
+      difftest.coreid  := 0.U
+      difftest.index   := i.U
+      difftest.valid   := en
+      difftest.address := addr
+      difftest.data    := ieee(data)
+    }
   }
   } // leaving gated-clock domain
   val fpuImpl = withClock (gated_clock) { new FPUImpl }
