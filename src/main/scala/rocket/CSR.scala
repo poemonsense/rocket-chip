@@ -487,7 +487,7 @@ class CSRFile(
   val reg_scontext = (coreParams.scontextWidth > 0).option(RegInit(0.U(coreParams.scontextWidth.W)))
 
   val reg_tselect = Reg(UInt(log2Up(nBreakpoints).W))
-  val reg_bp = Reg(Vec(1 << log2Up(nBreakpoints), new BP))
+  val reg_bp = RegInit(VecInit.fill(1 << log2Up(nBreakpoints))(0.U.asTypeOf(new BP)))
   val reg_pmp = Reg(Vec(nPMPs, new PMPReg))
 
   val reg_mie = Reg(UInt(xLen.W))
@@ -526,11 +526,11 @@ class CSRFile(
 
   val delegable_counters = ((BigInt(1) << (nPerfCounters + CSR.firstHPM)) - 1).U
   val (reg_mcounteren, read_mcounteren) = {
-    val reg = Reg(UInt(32.W))
+    val reg = RegInit(0.U(32.W))
     (reg, Mux(usingUser.B, reg & delegable_counters, 0.U))
   }
   val (reg_scounteren, read_scounteren) = {
-    val reg = Reg(UInt(32.W))
+    val reg = RegInit(0.U(32.W))
     (reg, Mux(usingSupervisor.B, reg & delegable_counters, 0.U))
   }
 
@@ -572,8 +572,8 @@ class CSRFile(
   val reg_satp = Reg(new PTBR)
   val reg_wfi = withClock(io.ungated_clock) { RegInit(false.B) }
 
-  val reg_fflags = Reg(UInt(5.W))
-  val reg_frm = Reg(UInt(3.W))
+  val reg_fflags = RegInit(0.U(5.W))
+  val reg_frm = RegInit(0.U(3.W))
   val reg_vconfig = usingVector.option(Reg(new VConfig))
   val reg_vstart = usingVector.option(Reg(UInt(maxVLMax.log2.W)))
   val reg_vxsat = usingVector.option(Reg(Bool()))
