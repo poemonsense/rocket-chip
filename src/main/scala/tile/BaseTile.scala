@@ -47,6 +47,7 @@ trait HasNonDiplomaticTileParameters {
   def usingSupervisor: Boolean = tileParams.core.hasSupervisorMode
   def usingHypervisor: Boolean = usingVM && tileParams.core.useHypervisor
   def usingDebug: Boolean = tileParams.core.useDebug
+  def usingTrigger: Boolean = tileParams.core.nBreakpoints > 0
   def usingRoCC: Boolean = !p(BuildRoCC).isEmpty
   def usingBTB: Boolean = tileParams.btb.isDefined && tileParams.btb.get.nEntries > 0
   def usingPTW: Boolean = usingVM

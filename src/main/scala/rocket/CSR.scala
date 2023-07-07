@@ -645,10 +645,6 @@ class CSRFile(
   val read_stvec = formTVec(reg_stvec).sextTo(xLen)
 
   val read_mapping = LinkedHashMap[Int,Bits](
-    CSRs.tselect -> reg_tselect,
-    CSRs.tdata1 -> reg_bp(reg_tselect).control.asUInt,
-    CSRs.tdata2 -> reg_bp(reg_tselect).address.sextTo(xLen),
-    CSRs.tdata3 -> reg_bp(reg_tselect).textra.asUInt,
     CSRs.misa -> reg_misa,
     CSRs.mstatus -> read_mstatus,
     CSRs.mtvec -> read_mtvec,
@@ -665,6 +661,13 @@ class CSRFile(
     CSRs.dpc -> readEPC(reg_dpc).sextTo(xLen),
     CSRs.dscratch0 -> reg_dscratch0.asUInt) ++
     reg_dscratch1.map(r => CSRs.dscratch1 -> r)
+
+  val trigger_csrs = if (!usingTrigger) LinkedHashMap() else LinkedHashMap[Int,Bits](
+    CSRs.tselect -> reg_tselect,
+    CSRs.tdata1 -> reg_bp(reg_tselect).control.asUInt,
+    CSRs.tdata2 -> reg_bp(reg_tselect).address.sextTo(xLen),
+    CSRs.tdata3 -> reg_bp(reg_tselect).textra.asUInt,
+  )
 
   val read_mnstatus = WireInit(0.U.asTypeOf(new MNStatus()))
   read_mnstatus.mpp := reg_mnstatus.mpp
@@ -697,6 +700,7 @@ class CSRFile(
     CSRs.vlenb -> (vLen / 8).U)
 
   read_mapping ++= debug_csrs
+  read_mapping ++= trigger_csrs
   read_mapping ++= nmi_csrs
   read_mapping ++= context_csrs
   read_mapping ++= fp_csrs
@@ -1318,6 +1322,10 @@ class CSRFile(
         when (decoded_addr(CSRs.dscratch1)) { r := wdata }
       }
     }
+
+    if (usingTrigger) {
+
+    }
     if (usingSupervisor) {
       when (decoded_addr(CSRs.sstatus)) {
         val new_sstatus = wdata.asTypeOf(new MStatus())
@@ -1432,7 +1440,7 @@ class CSRFile(
       when (decoded_addr(CSRs.mcounteren)) { reg_mcounteren := wdata }
       when (decoded_addr(CSRs.menvcfg))    { reg_menvcfg.write(wdata) }
     }
-    if (nBreakpoints > 0) {
+    if (usingTrigger && nBreakpoints > 0) {
       when (decoded_addr(CSRs.tselect)) { reg_tselect := wdata }
 
       for ((bp, i) <- reg_bp.zipWithIndex) {
