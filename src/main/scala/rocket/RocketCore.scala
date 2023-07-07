@@ -51,6 +51,7 @@ case class RocketCoreParams(
   fastLoadWord: Boolean = true,
   fastLoadByte: Boolean = false,
   branchPredictionModeCSR: Boolean = false,
+  chickenCSR: Boolean = true,
   clockGate: Boolean = false,
   mvendorid: Int = 0, // 0 means non-commercial implementation
   mimpid: Int = 0x20181004, // release date in BCD
@@ -106,7 +107,7 @@ class RocketCustomCSRs(implicit p: Parameters) extends CustomCSRs with HasRocket
       haveDCache.toInt << 9 | // suppressCorruptOnGrantData
       tileParams.icache.get.prefetch.toInt << 17
     )
-    Some(CustomCSR(chickenCSRId, mask, Some(mask)))
+    rocketParams.chickenCSR.option(CustomCSR(chickenCSRId, mask, Some(mask)))
   }
 
   def disableICachePrefetch = getOrElse(chickenCSR, _.value(17), true.B)

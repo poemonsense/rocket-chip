@@ -63,6 +63,7 @@ class FuzzConfig extends Config(
           haveCease = false,
           nPMPs = 0,
           nBreakpoints = 0,
+          chickenCSR = false,
         )
       ))
     }
