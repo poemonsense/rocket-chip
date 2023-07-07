@@ -61,7 +61,8 @@ class FuzzConfig extends Config(
       case tp: RocketTileAttachParams => tp.copy(tileParams = tp.tileParams.copy(
         core = tp.tileParams.core.copy(
           haveCease = false,
-          nPMPs = 0
+          nPMPs = 0,
+          nBreakpoints = 0,
         )
       ))
     }
