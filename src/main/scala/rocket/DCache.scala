@@ -14,7 +14,7 @@ import freechips.rocketchip.util.property
 import chisel3.{DontCare, WireInit, dontTouch, withClock}
 import chisel3.internal.sourceinfo.SourceInfo
 import TLMessages._
-import difftest.{DiffStoreEvent, DifftestModule}
+import difftest.{DiffStoreEvent, DiffLrScEvent, DifftestModule}
 
 // TODO: delete this trait once deduplication is smart enough to avoid globally inlining matching circuits
 trait InlineInstance { self: chisel3.experimental.BaseModule =>
@@ -460,6 +460,13 @@ class DCacheModule(outer: DCache) extends HellaCacheModule(outer) {
   when (lrscCount > 0.U) { lrscCount := lrscCount - 1.U }
   when (s2_valid_not_killed && lrscValid) { lrscCount := lrscBackoff.U }
   when (s1_probe) { lrscCount := 0.U }
+  if (true) {
+    val difftest = DifftestModule(new DiffLrScEvent, delay = 1)
+    difftest.clock   := clock
+    difftest.coreid  := 0.U
+    difftest.valid   := io.cpu.resp.valid && s2_sc
+    difftest.success := lrscValid && lrscAddrMatch
+  }
 
   // don't perform data correction if it might clobber a recent store
   val s2_correct = s2_data_error && !any_pstore_valid && !RegNext(any_pstore_valid || s2_valid) && usingDataScratchpad.B
