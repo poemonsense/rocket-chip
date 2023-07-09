@@ -18,7 +18,9 @@ case class BootROMParams(
   address: BigInt = 0x10000,
   size: Int = 0x10000,
   hang: BigInt = 0x10040, // The hang parameter is used as the power-on reset vector
-  contentFileName: String)
+  contentFileName: String,
+  withDTB: Boolean = true,
+)
 
 class TLROM(val base: BigInt, val size: Int, contentsDelayed: => Seq[Byte], executable: Boolean = true, beatBytes: Int = 4,
   resources: Seq[Resource] = new SimpleDevice("rom", Seq("sifive,rom0")).reg("mem"))(implicit p: Parameters) extends LazyModule
@@ -76,7 +78,8 @@ object BootROM {
     lazy val contents = {
       val romdata = Files.readAllBytes(Paths.get(params.contentFileName))
       val rom = ByteBuffer.wrap(romdata)
-      rom.array() ++ subsystem.dtb.contents
+      val dtbContents = if (params.withDTB) subsystem.dtb.contents else Seq()
+      rom.array() ++ dtbContents
     }
 
     val bootrom = bootROMDomainWrapper {

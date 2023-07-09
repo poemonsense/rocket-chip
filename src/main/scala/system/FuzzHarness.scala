@@ -76,7 +76,8 @@ class FuzzConfig extends Config(
     case BootROMLocated(InSubsystem) => Some(BootROMParams(
       contentFileName = "./bootrom/bootrom.img",
       address = 0x10000000,
-      hang = 0x10000000
+      hang = 0x10000000,
+      withDTB = false,
     ))
     case ExtMem => Some(MemoryPortParams(MasterPortParams(
       base = x"8000_0000",

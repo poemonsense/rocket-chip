@@ -12,4 +12,4 @@ all: $(bootrom_img)
 	$(OBJCOPY) -O binary $< $@
 
 %.elf: %.S linker.ld
-	$(GCC) -Tlinker.ld $< -nostdlib -static -Wl,--no-gc-sections -o $@
+	$(GCC) -Tlinker.ld $< -nostdlib -static -Wl,--no-gc-sections -o $@ -march=rv64g
