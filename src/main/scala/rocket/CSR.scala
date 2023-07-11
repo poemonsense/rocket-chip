@@ -1205,8 +1205,8 @@ class CSRFile(
     }
   }
 
-  // For now, only mcycle read requires skip
-  io.csrr_counter := decoded_addr(CSRs.mcycle)
+  // For now, only reg_cycle read requires skip
+  io.csrr_counter := decoded_addr(CSRs.mcycle) || decoded_addr(CSRs.cycle)
 
   val csr_wen = io.rw.cmd.isOneOf(CSR.S, CSR.C, CSR.W)
   io.csrw_counter := Mux(coreParams.haveBasicCounters.B && csr_wen && (io.rw.addr.inRange(CSRs.mcycle.U, (CSRs.mcycle + CSR.nCtr).U) || io.rw.addr.inRange(CSRs.mcycleh.U, (CSRs.mcycleh + CSR.nCtr).U)), UIntToOH(io.rw.addr(log2Ceil(CSR.nCtr+nPerfCounters)-1, 0)), 0.U)
