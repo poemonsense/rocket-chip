@@ -1621,12 +1621,14 @@ class CSRFile(
   }
 
   if (true) {
+    val cycleCnt = RegInit(0.U(64.W))
+    cycleCnt := cycleCnt + 1.U
     val difftest = DifftestModule(new DiffTrapEvent)
     difftest.clock    := clock
     difftest.coreid   := 0.U
     difftest.hasTrap  := false.B
     difftest.code     := 0.U
-    difftest.cycleCnt := reg_cycle
+    difftest.cycleCnt := cycleCnt
     difftest.instrCnt := reg_instret
     difftest.hasWFI   := 0.U
     difftest.pc       := io.pc
