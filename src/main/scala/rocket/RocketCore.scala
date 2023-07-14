@@ -742,12 +742,12 @@ class Rocket(tile: RocketTile)(implicit p: Parameters) extends CoreModule()(p)
   val dmem_resp_valid = io.dmem.resp.valid && io.dmem.resp.bits.has_data
   val dmem_resp_replay = dmem_resp_valid && io.dmem.resp.bits.replay
 
-  div.io.resp.ready := !wb_wxd
+  div.io.resp.ready := !wb_wxd || wb_waddr === 0.U
   val ll_wdata = WireDefault(div.io.resp.bits.data)
   val ll_waddr = WireDefault(div.io.resp.bits.tag)
   val ll_wen = WireDefault(div.io.resp.fire)
   if (usingRoCC) {
-    io.rocc.resp.ready := !wb_wxd
+    io.rocc.resp.ready := !wb_wxd || wb_waddr === 0.U
     when (io.rocc.resp.fire) {
       div.io.resp.ready := false.B
       ll_wdata := io.rocc.resp.bits.data
@@ -767,7 +767,7 @@ class Rocket(tile: RocketTile)(implicit p: Parameters) extends CoreModule()(p)
   val wb_wen = wb_valid && wb_ctrl.wxd
   val rf_wen = wb_wen || ll_wen
   val rf_waddr = Mux(ll_wen, ll_waddr, wb_waddr)
-  val rf_wdata = Mux(dmem_resp_valid && dmem_resp_xpu, io.dmem.resp.bits.data(xLen-1, 0),
+  val rf_wdata = Mux(dmem_resp_valid && dmem_resp_xpu && wb_waddr =/= 0.U, io.dmem.resp.bits.data(xLen-1, 0),
                  Mux(ll_wen, ll_wdata,
                  Mux(wb_ctrl.csr =/= CSR.N, csr.io.rw.rdata,
                  Mux(wb_ctrl.mul, mul.map(_.io.resp.bits.data).getOrElse(wb_reg_wdata),
