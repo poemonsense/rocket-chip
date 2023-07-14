@@ -1044,6 +1044,7 @@ class FPU(cfg: FPUParams)(implicit p: Parameters) extends FPUModule()(p) {
       difftest.valid   := en
       difftest.address := addr
       difftest.data    := ieee(data)
+      difftest.nack    := false.B
     }
   }
   } // leaving gated-clock domain

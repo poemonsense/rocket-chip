@@ -762,6 +762,7 @@ class Rocket(tile: RocketTile)(implicit p: Parameters) extends CoreModule()(p)
     ll_waddr := dmem_resp_waddr
     ll_wen := true.B
   }
+  val ll_wen_try = div.io.resp.valid || io.rocc.resp.valid || dmem_resp_replay && dmem_resp_xpu
 
   val wb_valid = wb_reg_valid && !replay_wb && !wb_xcpt
   val wb_wen = wb_valid && wb_ctrl.wxd
@@ -1112,9 +1113,10 @@ class Rocket(tile: RocketTile)(implicit p: Parameters) extends CoreModule()(p)
     difftest.clock := clock
     difftest.coreid := 0.U
     difftest.index := 0.U
-    difftest.valid := ll_wen && ll_waddr =/= 0.U
+    difftest.valid := ll_wen_try && ll_waddr =/= 0.U
     difftest.address := ll_waddr
     difftest.data := rf_wdata
+    difftest.nack := !ll_wen
   }
 
   // CoreMonitorBundle for late latency writes
