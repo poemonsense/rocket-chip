@@ -768,7 +768,7 @@ class Rocket(tile: RocketTile)(implicit p: Parameters) extends CoreModule()(p)
   val wb_wen = wb_valid && wb_ctrl.wxd
   val rf_wen = wb_wen || ll_wen
   val rf_waddr = Mux(ll_wen, ll_waddr, wb_waddr)
-  val rf_wdata = Mux(dmem_resp_valid && dmem_resp_xpu && wb_waddr =/= 0.U, io.dmem.resp.bits.data(xLen-1, 0),
+  val rf_wdata = Mux(dmem_resp_valid && dmem_resp_xpu && dmem_resp_waddr =/= 0.U, io.dmem.resp.bits.data(xLen-1, 0),
                  Mux(ll_wen, ll_wdata,
                  Mux(wb_ctrl.csr =/= CSR.N, csr.io.rw.rdata,
                  Mux(wb_ctrl.mul, mul.map(_.io.resp.bits.data).getOrElse(wb_reg_wdata),
