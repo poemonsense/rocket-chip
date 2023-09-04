@@ -92,6 +92,7 @@ object FuzzMain {
     (new ChiselStage).execute(args, generator
       :+ CIRCTTargetAnnotation(CIRCTTarget.SystemVerilog)
       :+ FirtoolOption("--disable-annotation-unknown")
+      :+ FirtoolOption("--preserve-aggregate=all")
     )
     DifftestModule.finish("rocket-chip")
   }
