@@ -6,7 +6,6 @@ import $file.hardfloat.common
 import $file.cde.common
 import $file.common
 import $file.difftest.build
-import $file.difftest.instrumentation.instrumentation.build
 
 object v {
   val scala = "2.13.10"
@@ -64,13 +63,11 @@ trait CDE
   override def millSourcePath = os.pwd / "cde" / "cde"
 }
 
-trait DiffTest extends difftest.build.CommonDiffTest {
-  def scalaVersion: T[String] = T(v.scala)
-
+trait DiffTest extends difftest.build.CommonDiffTest with RocketChipPublishModule {
   override def millSourcePath = os.pwd / "difftest"
 }
 
-object difftestDep extends Cross[DiffTest](v.chiselCrossVersions.keys.toSeq)
+object difftestDep extends DiffTest
 
 object rocketchip extends Cross[RocketChip](v.chiselCrossVersions.keys.toSeq)
 
@@ -97,7 +94,7 @@ trait RocketChip
 
   def cdeModule = cde
 
-  def difftestModule = difftestDep(crossValue)
+  def difftestModule = difftestDep
 
   def mainargsIvy = v.mainargs
 
