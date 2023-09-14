@@ -2,6 +2,8 @@ package freechips.rocketchip.system
 
 
 import chisel3._
+import chisel3.util.Queue
+import freechips.rocketchip.regmapper.LFSR16Seed
 import chisel3.stage.ChiselGeneratorAnnotation
 import circt.stage._
 import difftest.{DifftestModule, LogCtrlIO, PerfInfoIO, UARTIO}
@@ -26,26 +28,60 @@ class ExampleFuzzSystem(implicit p: Parameters) extends RocketSubsystem
 
 class ExampleFuzzSystemImp[+L <: ExampleFuzzSystem](_outer: L) extends RocketSubsystemModuleImp(_outer)
 
+class MyTest extends Bundle {
+  val a0 = UInt(8.W)
+  val a1 = UInt(8.W)
+  val a2 = UInt(8.W)
+  val a3 = UInt(8.W)
+  val a4 = UInt(8.W)
+}
+
+class Test extends Module {
+  val io = IO(new Bundle {
+    val in = Input(new MyTest)
+    val out = Output(new MyTest)
+  })
+
+  val q = Module(new Queue(new MyTest, 2))
+  q.io.enq.valid := true.B
+  q.io.enq.bits := io.in
+  q.io.deq.ready := true.B
+  io.out := q.io.deq.bits
+    when (q.io.deq.fire) {
+    printf("deq: %x\n", io.out.asUInt)
+  }
+  when (q.io.enq.fire) {
+    printf("enq: %x\n", io.in.asUInt)
+  }
+
+}
 class SimTop(implicit p: Parameters) extends Module {
   val io = IO(new Bundle {
     val logCtrl = Input(new LogCtrlIO)
     val perfInfo = new PerfInfoIO
     val uart = new UARTIO
+    // val in = Input(new MyTest)
+    // val out = Output(new MyTest)
   })
-
-  val ldut = LazyModule(new ExampleFuzzSystem)
-  val dut = Module(ldut.module)
-
-  // Allow the debug ndreset to reset the dut, but not until the initial reset has completed
-  dut.reset := (reset.asBool | ldut.debug.map { debug => AsyncResetReg(debug.ndreset) }.getOrElse(false.B)).asBool
-
-  SimAXIMem.connectMem(ldut)
-  val success = WireInit(false.B)
-  Debug.connectDebug(ldut.debug, ldut.resetctrl, ldut.psd, clock, reset.asBool, success)
-
   io := DontCare
-  ldut.module.meip.foreach(_.foreach(_ := false.B))
-  ldut.module.seip.foreach(_.foreach(_ := false.B))
+
+  val test = Module(new Test)
+  test.io.in := LFSR16Seed(0x1234).asTypeOf(test.io.in)
+  // io.out := test.io.out
+
+  // val ldut = LazyModule(new ExampleFuzzSystem)
+  // val dut = Module(ldut.module)
+
+  // // Allow the debug ndreset to reset the dut, but not until the initial reset has completed
+  // dut.reset := (reset.asBool | ldut.debug.map { debug => AsyncResetReg(debug.ndreset) }.getOrElse(false.B)).asBool
+
+  // SimAXIMem.connectMem(ldut)
+  // val success = WireInit(false.B)
+  // Debug.connectDebug(ldut.debug, ldut.resetctrl, ldut.psd, clock, reset.asBool, success)
+
+  // io := DontCare
+  // ldut.module.meip.foreach(_.foreach(_ := false.B))
+  // ldut.module.seip.foreach(_.foreach(_ := false.B))
 }
 
 class FuzzConfig extends Config(
@@ -92,6 +128,7 @@ object FuzzMain {
     (new ChiselStage).execute(args, generator
       :+ CIRCTTargetAnnotation(CIRCTTarget.SystemVerilog)
       :+ FirtoolOption("--disable-annotation-unknown")
+      :+ FirtoolOption("--preserve-aggregate=all")
     )
     DifftestModule.finish("rocket-chip")
   }
